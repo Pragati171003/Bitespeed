@@ -13,7 +13,7 @@ const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: DB_HOST,
   port: DB_PORT,
   dialect: 'postgres',
-  logging: process.env.NODE_ENV === 'development' ? console.log : false, // Log queries in dev
+  logging: process.env.NODE_ENV === 'development' ? console.log : false, 
   pool: {
     max: 5,
     min: 0,
@@ -26,8 +26,7 @@ export const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
-    // Sync models - careful with force: true in production
-    await sequelize.sync({ alter: true }); // alter: true tries to update tables; use migrations for prod
+    await sequelize.sync({ alter: true }); 
     console.log('All models were synchronized successfully.');
   } catch (error) {
     console.error('Unable to connect to the database:', error);

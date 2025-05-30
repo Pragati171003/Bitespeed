@@ -33,7 +33,7 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
       where: {
         [Op.or]: orConditions,
       },
-      order: [['createdAt', 'ASC']], // Oldest first
+      order: [['createdAt', 'ASC']], 
       transaction,
     });
 
@@ -60,20 +60,17 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
     // Scenario 2: Existing contacts found
     let primaryContact = matchingContacts.find(c => c.linkPrecedence === LinkPrecedence.PRIMARY);
     
-    // If no primary contact found among direct matches, find their primary
     if (!primaryContact && matchingContacts[0].linkedId) {
         const rootPrimary = await Contact.findByPk(matchingContacts[0].linkedId, { transaction });
         if (rootPrimary) primaryContact = rootPrimary;
-        else { // Should not happen if data is consistent
-            primaryContact = matchingContacts[0]; // Fallback, though problematic
+        else { 
+            primaryContact = matchingContacts[0]; 
             primaryContact.linkPrecedence = LinkPrecedence.PRIMARY;
             primaryContact.linkedId = null;
             await primaryContact.save({ transaction });
         }
     } else if (!primaryContact) {
-        // This case could occur if all matches are secondary but their primary was deleted or unlinked
-        // Promote the oldest matched contact to primary
-        primaryContact = matchingContacts[0]; // Oldest due to sort
+        primaryContact = matchingContacts[0];
         primaryContact.linkPrecedence = LinkPrecedence.PRIMARY;
         primaryContact.linkedId = null;
         await primaryContact.save({ transaction });
@@ -94,14 +91,12 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
         }
     });
     
-    // If primaryContact was derived from a linkedId not in matchingContacts, add it.
     if (primaryContact) {
         primaryIds.add(primaryContact.id);
         allRelatedContactIds.add(primaryContact.id);
     }
 
 
-    // Find all contacts belonging to any of these primary groups
     let allGroupContacts = await Contact.findAll({
         where: {
             [Op.or]: [
@@ -113,21 +108,18 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
         transaction
     });
     
-    // Determine the single "ultimate" primary contact (the oldest one)
     let ultimatePrimaryContact = allGroupContacts
         .filter(c => c.linkPrecedence === LinkPrecedence.PRIMARY)
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
 
-    if (!ultimatePrimaryContact) { // Should not happen if logic above is sound and data is consistent
-        ultimatePrimaryContact = allGroupContacts[0]; // Fallback: oldest overall
+    if (!ultimatePrimaryContact) { 
+        ultimatePrimaryContact = allGroupContacts[0]; 
         ultimatePrimaryContact.linkPrecedence = LinkPrecedence.PRIMARY;
         ultimatePrimaryContact.linkedId = null;
-        // await ultimatePrimaryContact.save({ transaction }); // Save below
     }
     
     const ultimatePrimaryId = ultimatePrimaryContact.id;
 
-    // Update other primaries to secondary and link them
     const updates: Promise<any>[] = [];
     allGroupContacts.forEach(contact => {
         if (contact.id !== ultimatePrimaryId) {
@@ -136,7 +128,7 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
                 contact.linkedId = ultimatePrimaryId;
                 updates.push(contact.save({ transaction }));
             } else if (contact.linkedId !== ultimatePrimaryId && contact.linkedId !== null) {
-                // If a secondary is linked to a demoted primary, relink it
+
                 const oldPrimary = allGroupContacts.find(c => c.id === contact.linkedId);
                 if (oldPrimary && oldPrimary.id !== ultimatePrimaryId) {
                      contact.linkedId = ultimatePrimaryId;
@@ -147,7 +139,7 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
     });
     await Promise.all(updates);
     
-    // Refresh allGroupContacts after potential updates
+
     allGroupContacts = await Contact.findAll({
         where: {
             [Op.or]: [
@@ -161,7 +153,6 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
     ultimatePrimaryContact = allGroupContacts.find(c => c.id === ultimatePrimaryId)!;
 
 
-    // Check if a new contact needs to be created
     const existingEmails = new Set(allGroupContacts.map(c => c.email).filter(Boolean));
     const existingPhoneNumbers = new Set(allGroupContacts.map(c => c.phoneNumber).filter(Boolean));
 
@@ -169,9 +160,9 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
     const newPhoneNumberProvided = phoneNumber && !existingPhoneNumbers.has(phoneNumber);
     
     let createdNewSecondary = false;
-    // Create new secondary if new info is provided *and* it's not a duplicate of an existing row's exact info
+
     if ((email || phoneNumber) && (newEmailProvided || newPhoneNumberProvided)) {
-        // Check if this exact combination of email/phone already exists in the group
+
         const exactMatchExists = allGroupContacts.some(c => {
             const cEmail = c.email || null;
             const cPhone = c.phoneNumber || null;
@@ -188,17 +179,17 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
                 },
                 { transaction }
             );
-            allGroupContacts.push(newSecondaryContact); // Add to current group for response
+            allGroupContacts.push(newSecondaryContact); 
             createdNewSecondary = true;
         }
     }
     
-    // Prepare response
+
     const finalEmails = new Set<string>();
     const finalPhoneNumbers = new Set<string>();
     const secondaryContactIds: number[] = [];
 
-    // Add ultimate primary's info first
+
     if (ultimatePrimaryContact.email) finalEmails.add(ultimatePrimaryContact.email);
     if (ultimatePrimaryContact.phoneNumber) finalPhoneNumbers.add(ultimatePrimaryContact.phoneNumber);
 
@@ -210,7 +201,7 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
       if (contact.phoneNumber) finalPhoneNumbers.add(contact.phoneNumber);
     });
 
-    // Ensure primary's info is first if present
+
     const emailsArray = Array.from(finalEmails);
     if (ultimatePrimaryContact.email && emailsArray.includes(ultimatePrimaryContact.email)) {
         const index = emailsArray.indexOf(ultimatePrimaryContact.email);
@@ -234,7 +225,7 @@ export const identifyContact = async (data: IdentifyRequest): Promise<IdentifyRe
         primaryContactId: ultimatePrimaryId,
         emails: emailsArray,
         phoneNumbers: phoneNumbersArray,
-        secondaryContactIds: Array.from(new Set(secondaryContactIds)), // Unique IDs
+        secondaryContactIds: Array.from(new Set(secondaryContactIds)), 
       },
     };
   });

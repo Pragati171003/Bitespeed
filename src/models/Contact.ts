@@ -74,9 +74,9 @@ Contact.init(
   },
   {
     sequelize,
-    tableName: 'Contacts', // Explicitly set table name
-    timestamps: true, // Enables createdAt and updatedAt
-    paranoid: true, // Enables soft deletes (deletedAt)
+    tableName: 'Contacts', 
+    timestamps: true, 
+    paranoid: true, 
     indexes: [
       { fields: ['email'] },
       { fields: ['phoneNumber'] },
