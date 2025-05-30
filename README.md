@@ -6,7 +6,7 @@ This project implements a backend service for identity reconciliation as per the
 
 The `/identify` endpoint is hosted on Render.com and can be accessed at:
 
-**`POST https: https://bitespeed-eelq.onrender.com/api/identify`**
+**POST** `https://bitespeed-eelq.onrender.com/api/identify`
 ---
 
 ## Features
