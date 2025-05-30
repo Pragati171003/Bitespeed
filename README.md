@@ -1,4 +1,3 @@
-# Bitespeed
 # Bitespeed Backend Task: Identity Reconciliation
 
 This project implements a backend service for identity reconciliation as per the Bitespeed backend task. It allows linking different contact information (email and phone number) to a single customer identity.
@@ -7,7 +6,7 @@ This project implements a backend service for identity reconciliation as per the
 
 The `/identify` endpoint is hosted on Render.com and can be accessed at:
 
-**`POST https:https://bitespeed-eelq.onrender.com/api/identify`**
+**`POST https: https://bitespeed-eelq.onrender.com/api/identify`**
 ---
 
 ## Features
@@ -30,16 +29,11 @@ The `/identify` endpoint is hosted on Render.com and can be accessed at:
 
 ---
 
-## API Endpoint
-
-### `POST /api/identify` 
-
-Identifies a user or creates/updates their contact information.
 
 **Request Body (JSON):**
 
 ```json
 {
-  "email"?: "string",      
-  "phoneNumber"?: "string" 
+  "email": "string",      
+  "phoneNumber": "string" 
 }
